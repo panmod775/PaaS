@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PanPaaS Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:monospace;background:#f5f5f3;color:#2c2c2a;padding:1.5rem}
+:root{
+  --color-background-primary:#ffffff;
+  --color-background-secondary:#f1efe8;
+  --color-background-tertiary:#e8e6df;
+  --color-text-primary:#2c2c2a;
+  --color-text-secondary:#5f5e5a;
+  --color-text-tertiary:#888780;
+  --color-border-tertiary:rgba(44,44,42,0.15);
+  --color-border-secondary:rgba(44,44,42,0.3);
+  --border-radius-md:8px;
+  --border-radius-lg:12px;
+  --font-mono:monospace;
+}
+@media(prefers-color-scheme:dark){
+  body{background:#1a1a18;color:#d3d1c7}
+  :root{
+    --color-background-primary:#2c2c2a;
+    --color-background-secondary:#1a1a18;
+    --color-background-tertiary:#111110;
+    --color-text-primary:#d3d1c7;
+    --color-text-secondary:#888780;
+    --color-text-tertiary:#5f5e5a;
+    --color-border-tertiary:rgba(211,209,199,0.15);
+    --color-border-secondary:rgba(211,209,199,0.3);
+  }
+}
+.shell{max-width:900px;margin:0 auto;min-height:600px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 0 1rem;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:1.25rem}
+.logo{font-size:13px;font-weight:500;letter-spacing:0.08em;color:var(--color-text-primary);display:flex;align-items:center;gap:8px}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:#1D9E75}
+.nav-tabs{display:flex;gap:4px}
+.tab{font-size:12px;padding:5px 12px;border-radius:var(--border-radius-md);border:0.5px solid transparent;cursor:pointer;background:none;color:var(--color-text-secondary);font-family:monospace}
+.tab.active{background:var(--color-background-secondary);border-color:var(--color-border-secondary);color:var(--color-text-primary)}
+.tab:hover:not(.active){color:var(--color-text-primary)}
+.section{display:none}
+.section.active{display:block}
+.apps-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-bottom:1.5rem}
+.app-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;cursor:pointer;transition:border-color 0.15s}
+.app-card:hover{border-color:var(--color-border-secondary)}
+.app-card.selected{border-color:#1D9E75;border-width:1px}
+.app-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.app-name{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.badge{font-size:10px;padding:2px 8px;border-radius:var(--border-radius-md);font-weight:500}
+.badge-run{background:#E1F5EE;color:#0F6E56}
+.badge-stop{background:#FCEBEB;color:#A32D2D}
+.badge-build{background:#FAEEDA;color:#854F0B}
+.app-meta{font-size:11px;color:var(--color-text-secondary);margin-bottom:8px}
+.mini-bar{height:3px;border-radius:2px;background:var(--color-background-tertiary);overflow:hidden}
+.mini-bar-fill{height:100%;border-radius:2px;transition:width 0.4s}
+.mini-bars{display:flex;flex-direction:column;gap:4px}
+.mini-label{font-size:10px;color:var(--color-text-tertiary);display:flex;justify-content:space-between;margin-bottom:2px}
+.detail-panel{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px}
+.detail-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.detail-title{font-size:14px;font-weight:500;color:var(--color-text-primary)}
+.action-row{display:flex;gap:8px}
+.btn{font-size:12px;padding:6px 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:none;cursor:pointer;color:var(--color-text-primary);font-family:monospace}
+.btn:hover{background:var(--color-background-secondary)}
+.btn-green{background:#E1F5EE;border-color:#9FE1CB;color:#0F6E56}
+.btn-green:hover{background:#9FE1CB}
+.btn-red{background:#FCEBEB;border-color:#F7C1C1;color:#A32D2D}
+.btn-red:hover{background:#F7C1C1}
+.tabs2{display:flex;gap:0;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:12px}
+.tab2{font-size:11px;padding:6px 14px;cursor:pointer;color:var(--color-text-secondary);border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;font-family:monospace}
+.tab2.active{color:var(--color-text-primary);border-bottom-color:#1D9E75}
+.log-box{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px;font-size:11px;height:180px;overflow-y:auto;font-family:monospace;line-height:1.7}
+.log-line{color:var(--color-text-secondary)}
+.log-line span{color:#1D9E75}
+.log-line.err span{color:#E24B4A}
+.log-line.warn span{color:#BA7517}
+.env-row{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+.env-key{font-size:11px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:5px 10px;width:140px;font-family:monospace;color:var(--color-text-primary)}
+.env-val{font-size:11px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:5px 10px;flex:1;font-family:monospace;color:var(--color-text-primary)}
+.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.metric-card{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px}
+.metric-label{font-size:10px;color:var(--color-text-secondary);margin-bottom:4px}
+.metric-val{font-size:18px;font-weight:500;color:var(--color-text-primary)}
+.metric-unit{font-size:10px;color:var(--color-text-secondary)}
+.deploy-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.deploy-item:last-child{border-bottom:none}
+.deploy-sha{font-size:11px;font-weight:500;color:var(--color-text-primary);font-family:monospace;width:60px}
+.deploy-msg{font-size:11px;color:var(--color-text-secondary);flex:1}
+.deploy-time{font-size:10px;color:var(--color-text-tertiary)}
+.deploy-status{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.ds-ok{background:#1D9E75}
+.ds-fail{background:#E24B4A}
+.chart-wrap{position:relative;height:100px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);overflow:hidden;margin-bottom:12px}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="topbar">
+    <div class="logo"><div class="logo-dot"></div>PanPaaS</div>
+    <div class="nav-tabs">
+      <button class="tab active" onclick="showSection('apps',this)">apps</button>
+      <button class="tab" onclick="showSection('deploy',this)">deploy</button>
+      <button class="tab" onclick="showSection('env',this)">env vars</button>
+    </div>
+  </div>
+
+  <div id="sec-apps" class="section active">
+    <div class="apps-grid" id="apps-grid"></div>
+    <div class="detail-panel" id="detail-panel" style="display:none">
+      <div class="detail-header">
+        <div class="detail-title" id="detail-name"></div>
+        <div class="action-row">
+          <button class="btn btn-green" onclick="actionDeploy()">▲ deploy</button>
+          <button class="btn btn-red" onclick="actionStop()">■ stop</button>
+          <button class="btn" onclick="actionRestart()">↺ restart</button>
+        </div>
+      </div>
+      <div class="tabs2">
+        <button class="tab2 active" onclick="showDetail('metrics',this)">metrics</button>
+        <button class="tab2" onclick="showDetail('logs',this)">logs</button>
+      </div>
+      <div id="dt-metrics">
+        <div class="metric-grid" id="metric-grid"></div>
+        <div class="chart-wrap"><canvas id="cpu-chart"></canvas></div>
+      </div>
+      <div id="dt-logs" style="display:none">
+        <div class="log-box" id="log-box"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="sec-deploy" class="section">
+    <div class="detail-panel">
+      <div class="detail-header"><div class="detail-title">deployment history</div></div>
+      <div id="deploy-list"></div>
+    </div>
+  </div>
+
+  <div id="sec-env" class="section">
+    <div class="detail-panel">
+      <div class="detail-header">
+        <div class="detail-title">environment variables</div>
+        <button class="btn btn-green" onclick="addEnv()">+ add</button>
+      </div>
+      <div id="env-list"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const APPS=[
+  {id:1,name:"api-gateway",lang:"Node.js",status:"running",cpu:34,mem:48,req:1240,uptime:"12d 4h"},
+  {id:2,name:"frontend-web",lang:"React",status:"running",cpu:12,mem:29,req:5830,uptime:"8d 1h"},
+  {id:3,name:"worker-jobs",lang:"Python",status:"stopped",cpu:0,mem:0,req:0,uptime:"—"},
+  {id:4,name:"auth-service",lang:"Go",status:"running",cpu:8,mem:15,req:920,uptime:"20d 6h"},
+  {id:5,name:"data-pipeline",lang:"Python",status:"building",cpu:55,mem:62,req:0,uptime:"building..."},
+];
+const DEPLOYS=[
+  {sha:"a3f9c12",msg:"fix: rate limit middleware",time:"2 min ago",ok:true},
+  {sha:"b8d1e04",msg:"feat: add JWT refresh token",time:"1h ago",ok:true},
+  {sha:"c2a7f88",msg:"chore: upgrade deps",time:"3h ago",ok:false},
+  {sha:"d5b3c90",msg:"fix: memory leak in worker",time:"6h ago",ok:true},
+  {sha:"e1f4a22",msg:"feat: health check endpoint",time:"1d ago",ok:true},
+];
+const ENVS=[
+  {k:"DATABASE_URL",v:"postgres://user:***@db.internal:5432/prod"},
+  {k:"REDIS_URL",v:"redis://cache.internal:6379"},
+  {k:"JWT_SECRET",v:"***hidden***"},
+  {k:"PORT",v:"3000"},
+];
+
+let selectedApp=null;
+let cpuHistory=Array.from({length:20},()=>Math.floor(Math.random()*60+10));
+let logLines=[];
+
+const LOG_TEMPLATES=[
+  ["info","GET /api/health 200 4ms"],
+  ["info","POST /api/auth/login 200 23ms"],
+  ["info","GET /api/users 200 12ms"],
+  ["warn","Slow query detected: 340ms"],
+  ["info","Worker job completed: #1823"],
+  ["err","Connection timeout: retry 2/3"],
+  ["info","Cache hit ratio: 94%"],
+  ["info","Deploy hook received"],
+];
+
+function statusBadge(s){
+  if(s==="running") return '<span class="badge badge-run">● running</span>';
+  if(s==="stopped") return '<span class="badge badge-stop">○ stopped</span>';
+  return '<span class="badge badge-build">⟳ building</span>';
+}
+function barColor(v){
+  if(v>80) return "#E24B4A";
+  if(v>60) return "#EF9F27";
+  return "#1D9E75";
+}
+
+function renderApps(){
+  const g=document.getElementById("apps-grid");
+  g.innerHTML=APPS.map(a=>`
+    <div class="app-card${selectedApp===a.id?' selected':''}" onclick="selectApp(${a.id})">
+      <div class="app-header">
+        <div class="app-name">${a.name}</div>
+        ${statusBadge(a.status)}
+      </div>
+      <div class="app-meta">${a.lang} · uptime ${a.uptime}</div>
+      <div class="mini-bars">
+        <div><div class="mini-label"><span>CPU</span><span>${a.cpu}%</span></div>
+        <div class="mini-bar"><div class="mini-bar-fill" style="width:${a.cpu}%;background:${barColor(a.cpu)}"></div></div></div>
+        <div><div class="mini-label"><span>MEM</span><span>${a.mem}%</span></div>
+        <div class="mini-bar"><div class="mini-bar-fill" style="width:${a.mem}%;background:${barColor(a.mem)}"></div></div></div>
+      </div>
+    </div>
+  `).join("");
+}
+
+function selectApp(id){
+  selectedApp=id;
+  const a=APPS.find(x=>x.id===id);
+  document.getElementById("detail-name").textContent=a.name;
+  document.getElementById("detail-panel").style.display="block";
+  renderMetrics(a);
+  renderApps();
+}
+
+function renderMetrics(a){
+  document.getElementById("metric-grid").innerHTML=`
+    <div class="metric-card"><div class="metric-label">CPU usage</div><div class="metric-val">${a.cpu}<span class="metric-unit">%</span></div></div>
+    <div class="metric-card"><div class="metric-label">Memory</div><div class="metric-val">${a.mem}<span class="metric-unit">%</span></div></div>
+    <div class="metric-card"><div class="metric-label">Requests/hr</div><div class="metric-val">${a.req.toLocaleString()}</div></div>
+  `;
+  drawChart();
+}
+
+function drawChart(){
+  const canvas=document.getElementById("cpu-chart");
+  if(!canvas) return;
+  const ctx=canvas.getContext("2d");
+  canvas.width=canvas.parentElement.offsetWidth;
+  canvas.height=100;
+  const w=canvas.width,h=canvas.height;
+  const max=Math.max(...cpuHistory,100);
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle="#1D9E75";
+  ctx.lineWidth=1.5;
+  ctx.beginPath();
+  cpuHistory.forEach((v,i)=>{
+    const x=i*(w/(cpuHistory.length-1));
+    const y=h-2-(v/max)*(h-8);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  ctx.fillStyle="rgba(29,158,117,0.07)";
+  ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.closePath();ctx.fill();
+  ctx.fillStyle="#1D9E75";
+  const lx=(cpuHistory.length-1)*(w/(cpuHistory.length-1));
+  const lv=cpuHistory[cpuHistory.length-1];
+  const ly=h-2-(lv/max)*(h-8);
+  ctx.beginPath();ctx.arc(lx,ly,3,0,Math.PI*2);ctx.fill();
+}
+
+function addLog(){
+  const t=LOG_TEMPLATES[Math.floor(Math.random()*LOG_TEMPLATES.length)];
+  const now=new Date();
+  const ts=now.toTimeString().slice(0,8);
+  logLines.push({type:t[0],ts,msg:t[1]});
+  if(logLines.length>40) logLines.shift();
+  const box=document.getElementById("log-box");
+  if(box && document.getElementById("dt-logs").style.display!=="none"){
+    box.innerHTML=logLines.map(l=>`<div class="log-line${l.type==="err"?' err':l.type==="warn"?' warn':''}"><span>${l.ts} [${l.type}]</span> ${l.msg}</div>`).join("");
+    box.scrollTop=box.scrollHeight;
+  }
+}
+
+function showSection(name,btn){
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.querySelectorAll(".nav-tabs .tab").forEach(t=>t.classList.remove("active"));
+  document.getElementById("sec-"+name).classList.add("active");
+  btn.classList.add("active");
+  if(name==="deploy") renderDeploys();
+  if(name==="env") renderEnvs();
+}
+
+function showDetail(name,btn){
+  document.getElementById("dt-metrics").style.display=name==="metrics"?"block":"none";
+  document.getElementById("dt-logs").style.display=name==="logs"?"block":"none";
+  document.querySelectorAll(".tab2").forEach(t=>t.classList.remove("active"));
+  btn.classList.add("active");
+  if(name==="logs"){
+    const box=document.getElementById("log-box");
+    box.innerHTML=logLines.map(l=>`<div class="log-line${l.type==="err"?' err':l.type==="warn"?' warn':''}"><span>${l.ts} [${l.type}]</span> ${l.msg}</div>`).join("");
+    box.scrollTop=box.scrollHeight;
+  }
+}
+
+function renderDeploys(){
+  document.getElementById("deploy-list").innerHTML=DEPLOYS.map(d=>`
+    <div class="deploy-item">
+      <div class="deploy-status ${d.ok?'ds-ok':'ds-fail'}"></div>
+      <div class="deploy-sha">${d.sha}</div>
+      <div class="deploy-msg">${d.msg}</div>
+      <div class="deploy-time">${d.time}</div>
+      <button class="btn" style="font-size:10px;padding:3px 10px" onclick="doRollback('${d.sha}')">rollback</button>
+    </div>
+  `).join("");
+}
+
+function renderEnvs(){
+  document.getElementById("env-list").innerHTML=ENVS.map((e,i)=>`
+    <div class="env-row">
+      <input class="env-key" value="${e.k}" readonly>
+      <input class="env-val" value="${e.v}">
+      <button class="btn btn-red" style="padding:5px 10px;font-size:11px" onclick="removeEnv(${i})">×</button>
+    </div>
+  `).join("");
+}
+
+function addEnv(){ENVS.push({k:"NEW_KEY",v:""});renderEnvs();}
+function removeEnv(i){ENVS.splice(i,1);renderEnvs();}
+
+function actionDeploy(){
+  const a=APPS.find(x=>x.id===selectedApp);
+  if(!a) return;
+  a.status="building"; renderApps();
+  setTimeout(()=>{
+    a.status="running";
+    DEPLOYS.unshift({sha:Math.random().toString(36).slice(2,9),msg:"manual deploy via dashboard",time:"just now",ok:true});
+    renderApps(); renderMetrics(a);
+  },1800);
+}
+function actionStop(){
+  const a=APPS.find(x=>x.id===selectedApp);
+  if(!a) return;
+  a.status="stopped"; a.cpu=0; a.mem=0;
+  renderApps(); renderMetrics(a);
+}
+function actionRestart(){
+  const a=APPS.find(x=>x.id===selectedApp);
+  if(!a) return;
+  a.status="building"; renderApps();
+  setTimeout(()=>{a.status="running"; renderApps(); renderMetrics(a);},1200);
+}
+function doRollback(sha){alert("Rolling back to "+sha+"...\n(demo only)");}
+
+setInterval(()=>{
+  const v=Math.min(100,Math.max(0,cpuHistory[cpuHistory.length-1]+(Math.random()*14-7)));
+  cpuHistory.push(Math.round(v));
+  if(cpuHistory.length>20) cpuHistory.shift();
+  if(selectedApp){
+    const a=APPS.find(x=>x.id===selectedApp);
+    if(a && a.status==="running"){a.cpu=Math.round(v);renderMetrics(a);}
+  }
+  APPS.forEach(a=>{
+    if(a.status==="running"){
+      a.cpu=Math.max(0,Math.min(100,a.cpu+(Math.random()*8-4)));
+      a.mem=Math.max(0,Math.min(100,a.mem+(Math.random()*4-2)));
+      a.cpu=Math.round(a.cpu); a.mem=Math.round(a.mem);
+    }
+  });
+  renderApps();
+},2000);
+
+setInterval(addLog,1500);
+renderApps();
+</script>
+</body>
+</html>
